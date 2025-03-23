@@ -1,0 +1,3 @@
+---
+- import_playbook: system_admin.yml
+- import_playbook: install_software.yml
