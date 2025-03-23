@@ -1,0 +1,59 @@
+- name: Linux System Administration  # Defines the playbook name (for readability)
+  hosts: all  # Specifies that the playbook should run on all target hosts
+  become: yes  # Grants sudo/root privileges to execute administrative tasks
+
+  tasks:  # List of tasks to be executed
+
+    - name: Update package cache  # Refreshes the list of available packages
+      apt:
+        update_cache: yes  # Ensures the package cache is updated before installing/upgrading packages
+
+    - name: Upgrade all packages  # Upgrades all installed packages to their latest versions
+      apt:
+        upgrade: dist  # Performs a distribution-level upgrade, ensuring all packages are updated
+
+    - name: Install required packages  # Installs essential system utilities
+      apt:
+        name:
+          - vim   # Text editor for command-line usage
+          - curl  # Command-line tool for transferring data
+          - htop  # Interactive system monitoring tool
+          - git   # Version control system for managing code
+          - ufw   # Uncomplicated Firewall for managing network security
+          - nginx # Web server used to serve web pages
+        state: present  # Ensures that the specified packages are installed
+
+    - name: Configure timezone  # Sets the system timezone to a specific region
+      command: timedatectl set-timezone Asia/Karachi  # Updates the system timezone to Asia/Karachi
+
+    - name: Configure hostname  # Sets the hostname of the machine
+      hostname:
+        name: myserver  # Defines the new hostname as "myserver"
+
+    - name: Create user "jaffer"  # Adds a new user to the system with sudo privileges
+      user:
+        name: jaffer  # Sets the username as "jaffer"
+        password: "{{ 'mypassword' | password_hash('sha512') }}"  # Encrypts and sets the user's password
+        shell: /bin/bash  # Defines the default shell as Bash
+        groups: sudo  # Adds the user to the "sudo" group, granting administrative privileges
+        append: yes  # Ensures the user is added to the "sudo" group without removing other group memberships
+
+    - name: Enable UFW firewall  # Turns on the Uncomplicated Firewall (UFW) to protect the system
+      ufw:
+        state: enabled  # Activates the firewall to enforce network security rules
+
+    - name: Allow SSH, HTTP, and HTTPS traffic  # Opens necessary ports for remote access and web traffic
+      ufw:
+        rule: allow  # Specifies that traffic should be allowed
+        port: "{{ item }}"  # Iterates through a list of ports to be opened
+        proto: tcp  # Specifies that only TCP traffic is allowed on these ports
+      loop:
+        - 22  # SSH (Secure Shell) for remote login
+        - 80  # HTTP (Web traffic without encryption)
+        - 443 # HTTPS (Secure web traffic using SSL/TLS)
+
+    - name: Start and enable Nginx service  # Ensures that the Nginx web server is running
+      service:
+        name: nginx  # Specifies the service name as "nginx"
+        state: started  # Ensures that the service is running
+        enabled: yes  # Ensures that the service starts automatically on system boot
