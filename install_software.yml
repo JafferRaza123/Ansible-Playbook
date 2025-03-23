@@ -1,0 +1,42 @@
+---
+- name: Install Git, Chrome, and NVIDIA Drivers
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install Git
+      apt:
+        name: git
+        state: present
+
+    - name: Download Google Chrome .deb package
+      get_url:
+        url: "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+        dest: "/tmp/google-chrome-stable_current_amd64.deb"
+
+    - name: Install Google Chrome
+      apt:
+        deb: "/tmp/google-chrome-stable_current_amd64.deb"
+
+    - name: Remove Chrome installation file
+      file:
+        path: "/tmp/google-chrome-stable_current_amd64.deb"
+        state: absent
+
+    - name: Detect NVIDIA hardware
+      command: lspci | grep -i nvidia
+      register: nvidia_check
+      changed_when: false
+
+    - name: Install NVIDIA drivers if GPU is detected
+      apt:
+        name: nvidia-driver-535
+        state: present
+      when: nvidia_check.stdout != ""
+
+    - name: Reboot system if NVIDIA drivers were installed
+      reboot:
+        msg: "Rebooting to apply NVIDIA driver changes"
+      when: nvidia_check.stdout != ""
+
+
